@@ -49,14 +49,14 @@ export default function LoginPage() {
     };
     try {
       dispatch(signInStart());
-      const { success, token, user_details, errors } = await loginUser(payload);
+      const { success, message, token, user_details, errors } = await loginUser(payload);
       console.log(user_details.is_email_verified);
       if (!user_details.is_email_verified) {
         redirectToEmailOTPVerification()
         return;
       }
       if (success && token) {
-        toast.success("Login Successful!");
+        toast.success(message);
         localStorage.setItem("authToken", token);
         localStorage.setItem("currentUser", JSON.stringify(user_details));
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -64,8 +64,8 @@ export default function LoginPage() {
         dispatch(login(user_details));
         setFormData({ email: "", password: "" });
         setTimeout(() => {
-          navigate("/home");
-        }, 1000);
+          navigate("/home")
+        }, 1000)
       } else {
         dispatch(signInFailure(errors?.[0] || "Login failed"));
         if (Array.isArray(errors)) {

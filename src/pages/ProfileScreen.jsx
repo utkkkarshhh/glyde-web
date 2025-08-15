@@ -8,8 +8,12 @@ import { Badge } from "../components/ui/badge"
 import { ServiceCardSkeleton } from "../components/common/LoadingSpinner"
 import EditProfileModal from "../components/modals/EditProfileModal"
 import Navbar from "../components/common/Navbar"
+import { useSelector, useDispatch } from "react-redux"
+import { logout } from "../redux/auth/authSlice"
 
-export default function ProfileScreen({ currentUser, onLogout, onAccountSettings, onPrivacySafety }) {
+export default function ProfileScreen() {
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.user.currentUser);
   const [isLoading, setIsLoading] = useState(true)
   const [showEditProfileModal, setShowEditProfileModal] = useState(false)
 
@@ -31,7 +35,11 @@ export default function ProfileScreen({ currentUser, onLogout, onAccountSettings
     // Handle profile update
   }
 
-  if (isLoading) {
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
+  if (isLoading || !currentUser) {
     return (
       <div className="pb-20 bg-gradient-to-br from-[#FF7F00]/5 via-white to-[#FF7F00]/10 min-h-screen">
         <Navbar />
@@ -84,15 +92,15 @@ export default function ProfileScreen({ currentUser, onLogout, onAccountSettings
             <div className="flex items-center gap-4 mb-4">
               <div className="relative">
                 <img
-                  src={currentUser.profilePic || "/placeholder.svg"}
-                  alt={currentUser.name}
+                  src={currentUser.profile_pic || "/placeholder.svg"}
+                  alt={currentUser.first_name}
                   className="w-20 h-20 rounded-full object-cover border-4 border-[#FF7F00]/20"
                 />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold text-gray-900">{currentUser.name}</h2>
+                  <h2 className="text-xl font-bold text-gray-900">{currentUser.first_name} {currentUser.last_name}</h2>
                   {currentUser.verified && (
                     <Badge className="bg-green-500 text-white border-0">
                       <Shield className="h-3 w-3 mr-1" />
@@ -157,19 +165,18 @@ export default function ProfileScreen({ currentUser, onLogout, onAccountSettings
               <Button
                 variant="ghost"
                 className="w-full justify-start hover:bg-[#FF7F00]/10"
-                onClick={onAccountSettings}
               >
                 <Settings className="h-4 w-4 mr-3 text-[#FF7F00]" />
                 Account Settings
               </Button>
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#FF7F00]/10" onClick={onPrivacySafety}>
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#FF7F00]/10">
                 <Shield className="h-4 w-4 mr-3 text-[#FF7F00]" />
                 Privacy & Safety
               </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={onLogout}
+                onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4 mr-3" />
                 Sign Out

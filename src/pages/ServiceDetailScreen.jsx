@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, MapPin, Clock, MessageCircle, Heart, Share, Flag } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Card, CardContent } from "../components/ui/card"
@@ -9,12 +10,39 @@ import { Separator } from "../components/ui/separator"
 import MessageModal from "../components/modals/MessageModal"
 import ReportModal from "../components/modals/ReportModal"
 import Navbar from "../components/common/Navbar"
+import { getServiceDetails } from "@/actions/serviceActions"
+import { ServiceCardSkeleton } from "@/components/common/LoadingSpinner"
 
-export default function ServiceDetailScreen({ service, onBack, onUserProfileView }) {
+export default function ServiceDetailScreen() {
+  const [service, setService] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false)
   const [showMessageModal, setShowMessageModal] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [messageType, setMessageType] = useState("")
+
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchServiceDetails = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getServiceDetails(id);
+        if (response.success) {
+          setService(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch service details", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchServiceDetails();
+    }
+  }, [id]);
 
   const handleRequestService = () => {
     setMessageType("request")
@@ -36,14 +64,26 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
     // Handle report submission
   }
 
-  if (!service) return null
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <ServiceCardSkeleton />
+      </div>
+    )
+  }
+
+  if (!service) return (
+    <div className="text-center py-12">
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">Service not found 🤔</h3>
+    </div>
+  )
 
   return (
     <div className="pb-20 bg-gradient-to-br from-[#FF7F00]/5 via-white to-[#FF7F00]/10 min-h-screen">
       {/* Header */}
       <Navbar />
       <div className="bg-white/80 backdrop-blur-md shadow-sm p-4 flex items-center gap-3 border-b border-[#FF7F00]/20">
-        <Button variant="ghost" size="icon" onClick={onBack} className="hover:bg-[#FF7F00]/10">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-[#FF7F00]/10">
           <ArrowLeft className="h-5 w-5 text-[#FF7F00]" />
         </Button>
         <h1 className="text-xl font-bold text-[#FF7F00] flex-1">Service Details</h1>
@@ -56,7 +96,7 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
         {/* Service Image */}
         <div className="relative">
           <img
-            src={service.image || "/placeholder.svg"}
+            src={service.thumbnail || "/placeholder.svg"}
             alt={service.title}
             className="w-full h-48 rounded-lg object-cover border-2 border-[#FF7F00]/10"
           />
@@ -80,21 +120,21 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
                   <Badge
                     variant="outline"
                     className={`${
-                      service.type === "offer"
+                      service.listing_type === "Offer"
                         ? "border-green-500 text-green-700 bg-green-50"
                         : "border-blue-500 text-blue-700 bg-blue-50"
                     }`}
                   >
-                    {service.type === "offer" ? "Offering" : "Requesting"}
+                    {service.listing_type === "Offer" ? "Offering" : "Requesting"}
                   </Badge>
-                  {service.isRecurring && (
+                  {service.is_recurring && (
                     <Badge className="bg-[#FF7F00]/10 text-[#FF7F00] border-[#FF7F00]/20">Recurring</Badge>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-[#FF7F00]">{service.price}</div>
-                <div className="text-sm text-gray-600">{service.category}</div>
+                <div className="text-2xl font-bold text-[#FF7F00]">${service.price}</div>
+                <div className="text-sm text-gray-600">Category: {service.service_category}</div>
               </div>
             </div>
 
@@ -107,7 +147,7 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4 text-[#FF7F00]" />
-                {service.time}
+                {new Date(service.datetime).toLocaleString()}
               </div>
             </div>
 
@@ -116,19 +156,19 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
             {/* Poster Info */}
             <div className="flex items-center gap-3">
               <img
-                src={service.poster.profilePic || "/placeholder.svg"}
-                alt={service.poster.name}
+                src={service.user.profile_pic || "/placeholder.svg"}
+                alt={service.user.first_name}
                 className="w-12 h-12 rounded-full object-cover border-2 border-[#FF7F00]/20"
               />
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{service.poster.name}</h3>
-                <p className="text-gray-600 text-sm">{service.poster.school}</p>
+                <h3 className="font-semibold text-gray-900">{service.user.first_name} {service.user.last_name}</h3>
+                <p className="text-gray-600 text-sm">{service.user.email}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="border-[#FF7F00]/20 hover:bg-[#FF7F00]/10 bg-transparent"
-                onClick={() => onUserProfileView && onUserProfileView(service.poster)}
+                onClick={() => navigate(`/profile/${service.user.id}`)}
               >
                 View Profile
               </Button>
@@ -145,9 +185,9 @@ export default function ServiceDetailScreen({ service, onBack, onUserProfileView
             </Button>
             <Button
               className="flex-1 bg-[#FF7F00] hover:bg-[#FF7F00]/90"
-              onClick={service.type === "offer" ? handleRequestService : handleOfferHelp}
+              onClick={service.listing_type === "Offer" ? handleRequestService : handleOfferHelp}
             >
-              {service.type === "offer" ? "Request This Service" : "Offer Help"}
+              {service.listing_type === "Offer" ? "Request This Service" : "Offer Help"}
             </Button>
           </div>
           <Button

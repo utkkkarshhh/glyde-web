@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowLeft, Camera, MapPin, DollarSign, RefreshCw } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -10,21 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
 import { Checkbox } from "../components/ui/checkbox"
 import Navbar from "../components/common/Navbar"
-
-const categories = [
-  "Academic Help",
-  "Beauty & Wellness",
-  "Transportation",
-  "Pet Care",
-  "Textbook Exchange",
-  "Food Pickup",
-  "Cleaning",
-  "Tech Support",
-  "Other",
-]
+import { getServiceCategories } from "@/actions/masterActions"
+import { createService } from "@/actions/serviceActions"
+import toast from "react-hot-toast"
+import { useNavigate } from "react-router-dom"
 
 export default function AddServiceScreen({ onServiceAdded }) {
   const [serviceType, setServiceType] = useState("offer")
+  const [categories, setCategories] = useState([])
+  const [thumbnail, setThumbnail] = useState(null)
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -37,11 +31,61 @@ export default function AddServiceScreen({ onServiceAdded }) {
     recurringFrequency: "weekly",
   })
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getServiceCategories()
+        if (response.success) {
+          setCategories(response.data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories", error)
+        toast.error("Failed to fetch categories");
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) {
+      setThumbnail(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Simulate adding service
-    console.log("Service added:", { ...formData, type: serviceType })
-    onServiceAdded()
+    
+    const datetime = `${formData.date} ${formData.time}`;
+    const listingType = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      price: formData.price,
+      location: formData.location,
+      datetime: datetime,
+      is_recurring: formData.isRecurring ? 1 : 0,
+      listing_type: listingType,
+      service_category: formData.category,
+      thumbnail: thumbnail,
+    };
+
+    try {
+      const response = await createService(payload);
+      if (response.success) {
+        toast.success(response.message);
+        // onServiceAdded(); // This was passed as a prop, but it's better to navigate
+        navigate("/home");
+      } else {
+        toast.error(response.message || "Failed to create service");
+      }
+    } catch (error) {
+      console.error("Failed to create service", error);
+      toast.error(error.response?.data?.message || "An error occurred");
+    }
   }
 
   return (
@@ -49,7 +93,7 @@ export default function AddServiceScreen({ onServiceAdded }) {
       {/* Header */}
       <Navbar />
       <div className="bg-white/80 backdrop-blur-md shadow-sm p-4 flex items-center gap-3 border-b border-[#FF7F00]/20">
-        <Button variant="ghost" size="icon" onClick={onServiceAdded} className="hover:bg-[#FF7F00]/10">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-[#FF7F00]/10">
           <ArrowLeft className="h-5 w-5 text-[#FF7F00]" />
         </Button>
         <h1 className="text-xl font-bold text-[#FF7F00]">Add Service</h1>
@@ -112,16 +156,16 @@ export default function AddServiceScreen({ onServiceAdded }) {
               <div className="grid grid-cols-2 gap-2">
                 {categories.map((category) => (
                   <Badge
-                    key={category}
-                    variant={formData.category === category ? "default" : "outline"}
+                    key={category.id}
+                    variant={formData.category === category.id ? "default" : "outline"}
                     className={`cursor-pointer text-center py-2 ${
-                      formData.category === category
+                      formData.category === category.id
                         ? "bg-[#FF7F00] hover:bg-[#FF7F00]/90"
                         : "hover:bg-[#FF7F00]/10 border-[#FF7F00]/20"
                     }`}
-                    onClick={() => setFormData({ ...formData, category })}
+                    onClick={() => setFormData({ ...formData, category: category.id })}
                   >
-                    {category}
+                    {category.service_category}
                   </Badge>
                 ))}
               </div>
@@ -178,22 +222,6 @@ export default function AddServiceScreen({ onServiceAdded }) {
                   </label>
                 </div>
 
-                {formData.isRecurring && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
-                    <select
-                      className="w-full px-3 py-2 border-2 border-[#FF7F00]/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF7F00] focus:border-[#FF7F00]"
-                      value={formData.recurringFrequency}
-                      onChange={(e) => setFormData({ ...formData, recurringFrequency: e.target.value })}
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="biweekly">Bi-weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </div>
-                )}
-
                 <p className="text-sm text-gray-600 mt-2">
                   💡 Recurring services help students find reliable, ongoing help
                 </p>
@@ -248,8 +276,11 @@ export default function AddServiceScreen({ onServiceAdded }) {
             <CardContent className="p-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Add Photo</label>
               <div className="border-2 border-dashed border-[#FF7F00]/30 rounded-lg p-6 text-center hover:border-[#FF7F00]/50 transition-colors">
-                <Camera className="mx-auto h-8 w-8 text-[#FF7F00]/60 mb-2" />
-                <p className="text-gray-500">Tap to add a photo</p>
+                <input type="file" className="hidden" id="file-upload" onChange={handleFileChange} accept="image/*" />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <Camera className="mx-auto h-8 w-8 text-[#FF7F00]/60 mb-2" />
+                  <p className="text-gray-500">{thumbnail ? thumbnail.name : "Tap to add a photo"}</p>
+                </label>
               </div>
             </CardContent>
           </Card>

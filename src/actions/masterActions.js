@@ -8,3 +8,10 @@ export const getUniversityMaster = async () => {
   });
   return response.data;
 };
+
+export const getServiceCategories = async () => {
+  const response = await axios.get(apiEndpoints.serviceCategoryListMaster, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return response.data;
+};
