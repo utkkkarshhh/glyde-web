@@ -12,8 +12,11 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { useLocation, useNavigate } from "react-router-dom";
+import { generateOtp, verifyOTP } from "@/actions/authActions";
+import toast from "react-hot-toast";
+import { parseApiError } from "@/utils/parseApiError";
 
-export default function OTPVerificationPage({ onVerificationSuccess }) {
+export default function OTPVerificationPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,6 +27,22 @@ export default function OTPVerificationPage({ onVerificationSuccess }) {
     otp: "",
     email: email,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleGenerateOtp = async () => {
+    try {
+      const payload = { email, otp_type: "email_verification" };
+      const response = await generateOtp(payload);
+      toast.success(response.message);
+      setOtpTimer(30);
+    } catch (error) {
+      toast.error(parseApiError(error));
+    }
+  };
+
+  useEffect(() => {
+    handleGenerateOtp();
+  }, []);
 
   useEffect(() => {
     let interval = null;
@@ -35,16 +54,27 @@ export default function OTPVerificationPage({ onVerificationSuccess }) {
     return () => clearInterval(interval);
   }, [otpTimer]);
 
-  const handleOTPSubmit = (e) => {
+  const handleOTPSubmit = async (e) => {
     e.preventDefault();
-    if (otpData.otp.length === 6) {
-      onVerificationSuccess?.();
+    if (otpData.otp.length !== 6) return;
+
+    setIsSubmitting(true);
+    try {
+      const payload = { ...otpData, otp_type: "email_verification" };
+      const response = await verifyOTP(payload);
+      if (response.success) {
+        toast.success(response.message);
+        navigate("/login");
+      }
+    } catch (error) {
+      toast.error(parseApiError(error));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleResendOTP = () => {
-    setOtpTimer(30);
-    console.log("OTP resent to:", email);
+    handleGenerateOtp();
   };
 
   const handleGoBack = () => {
@@ -99,11 +129,11 @@ export default function OTPVerificationPage({ onVerificationSuccess }) {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white py-3 text-lg font-semibold"
-              disabled={otpData.otp.length !== 6}
+              disabled={otpData.otp.length !== 6 || isSubmitting}
             >
-              {otpData.otp.length !== 6
+              {isSubmitting ? "Verifying..." : (otpData.otp.length !== 6
                 ? "Enter Code..."
-                : "Verify & Continue 🚀"}
+                : "Verify & Continue 🚀")}
             </Button>
           </form>
 

@@ -20,6 +20,7 @@ import {
   signInFailure,
 } from "@/redux/user/userSlice";
 import { login } from "@/redux/auth/authSlice";
+import { OTP_TYPES } from "@/constants/constants";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +37,7 @@ export default function LoginPage() {
     navigate("/email-verification", {
       state: {
         email: formData.email,
-        isSignIn: true,
+        otp_type: OTP_TYPES.EMAIL_VERIFICATION,
       },
     });
   };
@@ -50,11 +51,7 @@ export default function LoginPage() {
     try {
       dispatch(signInStart());
       const { success, message, token, user_details, errors } = await loginUser(payload);
-      console.log(user_details.is_email_verified);
-      if (!user_details.is_email_verified) {
-        redirectToEmailOTPVerification()
-        return;
-      }
+
       if (success && token) {
         toast.success(message);
         localStorage.setItem("authToken", token);
@@ -66,12 +63,16 @@ export default function LoginPage() {
         setTimeout(() => {
           navigate("/home")
         }, 1000)
+      } else if (success && !token && user_details && !user_details.is_email_verified) {
+        toast.error(message);
+        dispatch(signInFailure(message));
+        redirectToEmailOTPVerification();
       } else {
         dispatch(signInFailure(errors?.[0] || "Login failed"));
         if (Array.isArray(errors)) {
           errors.forEach((msg) => toast.error(msg));
         } else {
-          toast.error("Login failed");
+          toast.error(message || "Login failed");
         }
       }
     } catch (error) {
