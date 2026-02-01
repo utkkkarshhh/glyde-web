@@ -9,10 +9,12 @@ import { ServiceCardSkeleton } from "../components/common/LoadingSpinner"
 import EditProfileModal from "../components/modals/EditProfileModal"
 import Navbar from "../components/common/Navbar"
 import { useSelector, useDispatch } from "react-redux"
-import { logout } from "../redux/auth/authSlice"
+import { logoutUser } from "../redux/user/userSlice"
+import { useNavigate } from "react-router-dom"
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.currentUser);
   const [isLoading, setIsLoading] = useState(true)
   const [showEditProfileModal, setShowEditProfileModal] = useState(false)
@@ -36,7 +38,8 @@ export default function ProfileScreen() {
   }
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
+    navigate("/");
   };
 
   if (isLoading || !currentUser) {
