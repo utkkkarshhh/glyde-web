@@ -12,6 +12,9 @@ import {
   Loader2,
   ArrowRight,
   ChevronDown,
+  Phone,
+  BookUser,
+  MessageCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/button";
@@ -24,7 +27,14 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
-import { registerToken } from "../constants/constants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { registerToken, YEAR_IN_SCHOOL, CONTACT_PREFERENCES, OTP_TYPES } from "../constants/constants";
 import { registerUser } from "@/actions/authActions";
 import { parseApiError } from "@/utils/parseApiError";
 import { getUniversityMaster } from "@/actions/masterActions";
@@ -86,6 +96,9 @@ export default function RegisterPage() {
     schoolId: null,
     schoolName: "",
     major: "",
+    phone_number: "",
+    year_in_school: "",
+    contact_preference: "Email",
   });
 
   const cleanFormData = () => {
@@ -97,6 +110,9 @@ export default function RegisterPage() {
       schoolId: null,
       schoolName: "",
       major: "",
+      phone_number: "",
+      year_in_school: "",
+      contact_preference: "Email",
     });
     setAcceptedTerms(false);
   };
@@ -109,7 +125,7 @@ export default function RegisterPage() {
     navigate("/email-verification", {
       state: {
         email: formData.email,
-        isSignUp: true,
+        reason: OTP_TYPES.EMAIL_VERIFICATION,
       },
     });
   };
@@ -160,6 +176,9 @@ export default function RegisterPage() {
       last_name: formData.lastName,
       university: formData.schoolId,
       major: formData.major,
+      phone_number: formData.phone_number,
+      year_in_school: formData.year_in_school,
+      contact_preference: formData.contact_preference,
       is_t_and_c_accepted: true,
     };
 
@@ -234,7 +253,7 @@ export default function RegisterPage() {
                 <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-gray-400 z-10" />
                 <button
                   type="button"
-                  className="w-  pl-10 pr-10 py-3 text-left border-2 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full pl-10 pr-10 py-3 text-left border-2 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   onClick={() => setShowSchoolDropdown(!showSchoolDropdown)}
                 >
                   <span
@@ -283,6 +302,40 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={(val) => setFormData({ ...formData, email: val })}
               />
+              
+              <InputField
+                icon={Phone}
+                type="tel"
+                placeholder="Phone Number"
+                value={formData.phone_number}
+                onChange={(val) => setFormData({ ...formData, phone_number: val })}
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <Select onValueChange={(value) => setFormData({ ...formData, year_in_school: value })}>
+                  <SelectTrigger className="w-full">
+                    <BookUser className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <SelectValue placeholder="Year in School" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(YEAR_IN_SCHOOL).map(([key, value]) => (
+                      <SelectItem key={key} value={value}>{value}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select onValueChange={(value) => setFormData({ ...formData, contact_preference: value })} defaultValue="Email">
+                  <SelectTrigger className="w-full">
+                    <MessageCircle className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <SelectValue placeholder="Contact Preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CONTACT_PREFERENCES).map(([key, value]) => (
+                      <SelectItem key={key} value={value}>{value}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

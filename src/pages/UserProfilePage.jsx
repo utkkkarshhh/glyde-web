@@ -95,7 +95,7 @@ export default function UserProfilePage({ user, onBack }) {
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{`${user.first_name} ${user.last_name}`}</h2>
                   {user.verified && (
                     <Badge className="bg-green-100 text-green-800">
                       <Shield className="h-3 w-3 mr-1" />
@@ -104,7 +104,10 @@ export default function UserProfilePage({ user, onBack }) {
                   )}
                 </div>
                 <p className="text-gray-600 mb-2">
-                  {user.school} • {user.major}
+                  {user.university?.name} • {user.major}
+                </p>
+                <p className="text-gray-600 mb-2">
+                  {user.year_in_school}
                 </p>
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                   <div className="flex items-center gap-1">

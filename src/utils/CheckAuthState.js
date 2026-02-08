@@ -8,7 +8,8 @@ export const loadUserFromLocalStorage = (dispatch) => {
 
   if (token && user) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    dispatch(signInSuccess({ user: JSON.parse(user) }));
-    dispatch(login(user));
+    const parsedUser = JSON.parse(user);
+    dispatch(signInSuccess({ user_details: parsedUser }));
+    dispatch(login(parsedUser));
   }
 };

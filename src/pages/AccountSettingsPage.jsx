@@ -1,18 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Key, Trash2, Sparkles, MessageCircle } from "lucide-react"
+import { ArrowLeft, Key, Trash2, Sparkles, MessageCircle, User } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import DeleteAccountModal from "../components/modals/DeleteAccountModal"
 import UpdatePasswordModal from "../components/modals/UpdatePasswordModal"
 import ContactPreferencesModal from "../components/modals/ContactPreferencesModal"
+import EditProfileModal from "../components/modals/EditProfileModal"
 import Navbar from "../components/common/Navbar"
+import { updateUser } from "@/actions/userActions"
+import toast from "react-hot-toast"
+import { useDispatch } from "react-redux"
+import { login } from "@/redux/auth/authSlice"
 
 export default function AccountSettingsPage({ currentUser, onBack }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showContactPreferencesModal, setShowContactPreferencesModal] = useState(false)
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+
+  const dispatch = useDispatch();
 
   const handleDeleteAccount = (data) => {
     console.log("Account deletion requested:", data)
@@ -31,6 +39,23 @@ export default function AccountSettingsPage({ currentUser, onBack }) {
     // Handle contact preferences update
   }
 
+  const handleProfileUpdate = async (data) => {
+    try {
+      const response = await updateUser(data);
+      if (response.success) {
+        toast.success(response.message);
+        const updatedUser = { ...currentUser, ...response.data };
+        localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+        dispatch(login(updatedUser));
+        setShowEditProfileModal(false);
+      } else {
+        toast.error(response.message || "Failed to update profile.");
+      }
+    } catch (error) {
+      toast.error(error.message || "An error occurred.");
+    }
+  };
+
   return (
     <div className="pb-20 bg-gradient-to-br from-[#FF7F00]/5 via-white to-[#FF7F00]/10 min-h-screen">
       <Navbar />
@@ -45,6 +70,26 @@ export default function AccountSettingsPage({ currentUser, onBack }) {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Profile Settings */}
+        <Card className="bg-white/80 backdrop-blur-sm border-[#FF7F00]/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#FF7F00]">👤 Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 text-sm mb-4">
+              Update your personal information.
+            </p>
+            <Button
+              onClick={() => setShowEditProfileModal(true)}
+              variant="outline"
+              className="w-full bg-[#FF7F00]/5 border-[#FF7F00]/20 hover:bg-[#FF7F00]/10"
+            >
+              <User className="h-4 w-4 mr-3 text-[#FF7F00]" />
+              Edit Profile
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Contact Preferences */}
         <Card className="bg-white/80 backdrop-blur-sm border-[#FF7F00]/10">
           <CardHeader>
@@ -119,6 +164,12 @@ export default function AccountSettingsPage({ currentUser, onBack }) {
         isOpen={showContactPreferencesModal}
         onClose={() => setShowContactPreferencesModal(false)}
         onSave={handleContactPreferencesUpdate}
+      />
+      <EditProfileModal
+        isOpen={showEditProfileModal}
+        onClose={() => setShowEditProfileModal(false)}
+        currentUser={currentUser}
+        onUpdate={handleProfileUpdate}
       />
     </div>
   )

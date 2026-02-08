@@ -15,19 +15,11 @@ export const loginUser = async (payload) => {
   return response.data;
 };
 
-export const requestOtp = async (identifier) => {
-  const response = await axios.post(
-    apiEndpoints.forgetPassword,
-    { identifier },
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+export const generateOtp = async (payload) => {
+  const response = await axios.post(apiEndpoints.generateOTP, { email: payload.email, reason: payload.otp_type }, {
+    headers: { "Content-Type": "application/json" },
+  });
   return response.data;
-};
-
-export const resendOtp = async (identifier) => {
-  return requestOtp(identifier);
 };
 
 export const verifyOTP = async (payload) => {
